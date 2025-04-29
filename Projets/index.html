@@ -11,6 +11,49 @@
     <link rel="stylesheet" href="../assets/css/header.css" />
     <link rel="stylesheet" href="../assets/css/voirplus.css" />
     <link rel="stylesheet" href="../assets/css/project.css" />
+    <style>
+      /* Style pour remplacer les boutons de filtres */
+      button.voirplus.filter {
+        padding: 10px 20px;
+        border-radius: 5px;
+        background-color: var(--violet-9);
+        color: white;
+        border: none;
+        margin: 10px;
+        font-size: 14px;
+        letter-spacing: normal;
+        text-transform: none;
+        transition: background-color 0.3s ease;
+        box-shadow: none;
+        scale: 1;
+      }
+
+      button.voirplus.filter:hover {
+        background-color: var(--violet-10);
+        letter-spacing: normal;
+        box-shadow: none;
+      }
+
+      button.voirplus.filter.active {
+        background-color: var(--violet-11);
+        letter-spacing: normal;
+      }
+
+      button.voirplus.filter:active {
+        transform: none;
+        box-shadow: none;
+        letter-spacing: normal;
+      }
+
+      .filter-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+    </style>
   </head>
 
   <body>
@@ -43,32 +86,14 @@
       </h1>
 
       <div class="filter-container">
-        <button class="voirplus filter">Tous</button>
-        <button class="voirplus filter">Design</button>
-        <button class="voirplus filter">Développement</button>
-        <button class="voirplus filter">Audiovisuel</button>
-        <button class="voirplus filter">UI/UX</button>
+        <button class="voirplus filter active" data-filter="all">Tous</button>
+        <button class="voirplus filter" data-filter="design">Design</button>
+        <button class="voirplus filter" data-filter="dev">Développement</button>
+        <button class="voirplus filter" data-filter="audiovisuel">
+          Audiovisuel
+        </button>
+        <button class="voirplus filter" data-filter="uiux">UI/UX</button>
       </div>
-
-      <style>
-        .filter-container {
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          scale: 0.5;
-        }
-        .filter {
-          margin: 20px;
-          background-color: var(--violet-9);
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          margin: 10px;
-          border-radius: 5px;
-          cursor: pointer;
-        }
-      </style>
 
       <div class="project-container">
         <div class="project design">
@@ -84,7 +109,7 @@
           </div>
         </div>
 
-        <div class="project ui/ux">
+        <div class="project uiux">
           <img src="../assets/img/cinecrazy.png" alt="Projet 1" />
           <div class="side">
             <h3>Cinécrazy</h3>
@@ -110,7 +135,7 @@
           </div>
         </div>
 
-        <div class="project développement">
+        <div class="project dev">
           <img src="../assets/img/Projets/Bobby/Cover.png" alt="Projet 1" />
           <div class="side">
             <h3>Bobby's Diner</h3>
@@ -123,7 +148,7 @@
           </div>
         </div>
 
-        <div class="project développement">
+        <div class="project dev">
           <img src="../assets/img/projets/Dashboard/Cover.png" alt="Projet 1" />
           <div class="side">
             <h3>Dashboard accidentologie</h3>
@@ -280,9 +305,9 @@
       const projects = document.querySelectorAll(".project");
       filterBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
-          const filter = btn.innerText.toLowerCase();
+          const filter = btn.getAttribute("data-filter");
           projects.forEach((project) => {
-            if (filter === "tous") {
+            if (filter === "all") {
               project.style.display = "block";
             } else if (project.classList.contains(filter)) {
               project.style.display = "block";
@@ -290,6 +315,8 @@
               project.style.display = "none";
             }
           });
+          filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
         });
       });
     </script>
