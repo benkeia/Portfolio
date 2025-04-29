@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de la Corde - Version Inverse</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background: #f0f0f0;
+        overflow: hidden;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .game-container {
+        position: relative;
+        width: 80%;
+        max-width: 800px;
+        height: 100px;
+        margin-bottom: 30px;
+      }
+
+      .rope {
+        position: absolute;
+        top: 40px;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background-color: #8b4513;
+      }
+
+      .marker {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        width: 20px;
+        height: 50px;
+        background-color: #ff0000;
+        transform: translateX(-50%);
+        transition: left 0.1s ease-out;
+      }
+
+      .side {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: 100px;
+        background-color: #333;
+      }
+
+      .left-side {
+        left: 0;
+      }
+
+      .right-side {
+        right: 0;
+      }
+
+      .player-area,
+      .ai-area {
+        position: absolute;
+        bottom: -50px;
+        padding: 10px;
+        background-color: #ddd;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .player-area {
+        left: 10%;
+        background-color: #d4edff;
+      }
+
+      .ai-area {
+        right: 10%;
+        background-color: #ffd4d4;
+      }
+
+      .power-meter {
+        width: 200px;
+        height: 20px;
+        background-color: #eee;
+        border: 1px solid #999;
+        margin: 10px auto;
+      }
+
+      .power-bar {
+        height: 100%;
+        width: 0%;
+        background-color: #4caf50;
+        transition: width 0.3s;
+      }
+
+      .score {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+
+      .game-info {
+        text-align: center;
+        margin-bottom: 20px;
+        max-width: 600px;
+      }
+
+      .controls {
+        margin-top: 60px;
+        text-align: center;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        margin: 0 10px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .result {
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .difficulty-controls {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .difficulty-label {
+        font-weight: bold;
+      }
+
+      .difficulty-meter {
+        width: 200px;
+        height: 10px;
+        background-color: #ddd;
+        border-radius: 5px;
+        position: relative;
+      }
+
+      .difficulty-indicator {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #ff5722;
+        border-radius: 50%;
+        top: -5px;
+        transform: translateX(-50%);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Jeu de la Corde - Version Inverse</h1>
+
+    <div class="score">
+      Joueur <span id="player-score">0</span> -
+      <span id="ai-score">0</span> Ordinateur
+    </div>
+
+    <div class="game-info">
+      <p>
+        Objectif : Poussez le marqueur rouge dans le camp adverse en appuyant
+        rapidement sur <strong>ESPACE</strong>!
+      </p>
+      <p>Plus vous appuyez vite, plus vous poussez fort!</p>
+    </div>
+
+    <div class="game-container">
+      <div class="side left-side"></div>
+      <div class="rope"></div>
+      <div class="marker" id="marker"></div>
+      <div class="side right-side"></div>
+
+      <div class="player-area">
+        Joueur
+        <div class="power-meter">
+          <div class="power-bar" id="player-power"></div>
+        </div>
+      </div>
+
+      <div class="ai-area">
+        Ordinateur
+        <div class="power-meter">
+          <div class="power-bar" id="ai-power"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div class="difficulty-controls">
+      <span class="difficulty-label">Difficulté: </span>
+      <div class="difficulty-meter">
+        <div
+          class="difficulty-indicator"
+          id="difficulty-indicator"
+          style="left: 80%"
+        ></div>
+      </div>
+      <span id="difficulty-value">Difficile</span>
+    </div>
+
+    <div class="controls">
+      <button id="start-btn">Commencer</button>
+      <button id="reset-btn">Réinitialiser</button>
+    </div>
+
+    <script>
+      // Éléments DOM
+      const marker = document.getElementById("marker");
+      const playerPower = document.getElementById("player-power");
+      const aiPower = document.getElementById("ai-power");
+      const startBtn = document.getElementById("start-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const resultDisplay = document.getElementById("result");
+      const playerScoreDisplay = document.getElementById("player-score");
+      const aiScoreDisplay = document.getElementById("ai-score");
+      const difficultyIndicator = document.getElementById(
+        "difficulty-indicator"
+      );
+      const difficultyValue = document.getElementById("difficulty-value");
+
+      // Variables du jeu
+      let isGameActive = false;
+      let markerPosition = 50;
+      let playerPowerLevel = 0;
+      let aiPowerLevel = 0;
+      let playerPushRate = 0;
+      let aiPushRate = 0;
+      let aiInterval;
+      let playerScore = 0;
+      let aiScore = 0;
+      let lastPressTime = 0;
+      let pushCooldown = false;
+      let difficultyLevel = 0.8; // Par défaut: difficile
+
+      // Constantes
+      const MARKER_SPEED = 0.5;
+      const POWER_DECAY = 0.7; // Augmenté pour plus de difficulté
+      const MAX_POWER = 100;
+      const POWER_GAIN = 4; // Légèrement réduit pour le joueur
+      const PUSH_STRENGTH = 0.25;
+      const AI_MIN_INTERVAL = 80; // Plus rapide
+      const AI_MAX_INTERVAL = 200; // Plus rapide
+      const FATIGUE_FACTOR = 0.98; // Facteur de fatigue du joueur
+
+      // Gestion de la difficulté
+      function setupDifficultyControl() {
+        const difficultyMeter = document.querySelector(".difficulty-meter");
+
+        // Mise à jour de la position initiale
+        updateDifficultyLabel();
+
+        // Gestion du glisser-déposer
+        difficultyIndicator.addEventListener("mousedown", startDrag);
+
+        function startDrag(e) {
+          e.preventDefault();
+          document.addEventListener("mousemove", doDrag);
+          document.addEventListener("mouseup", stopDrag);
+        }
+
+        function doDrag(e) {
+          const rect = difficultyMeter.getBoundingClientRect();
+          let position = ((e.clientX - rect.left) / rect.width) * 100;
+
+          // Limiter entre 0 et 100%
+          position = Math.max(0, Math.min(100, position));
+
+          difficultyIndicator.style.left = `${position}%`;
+
+          // Mettre à jour la difficulté (0.2 = très facile, 1.0 = impossible)
+          difficultyLevel = 0.2 + (position / 100) * 0.8;
+          updateDifficultyLabel();
+        }
+
+        function stopDrag() {
+          document.removeEventListener("mousemove", doDrag);
+          document.removeEventListener("mouseup", stopDrag);
+        }
+      }
+
+      function updateDifficultyLabel() {
+        if (difficultyLevel < 0.4) {
+          difficultyValue.textContent = "Facile";
+        } else if (difficultyLevel < 0.6) {
+          difficultyValue.textContent = "Moyen";
+        } else if (difficultyLevel < 0.8) {
+          difficultyValue.textContent = "Difficile";
+        } else {
+          difficultyValue.textContent = "Expert";
+        }
+      }
+
+      // Initialisation
+      function initGame() {
+        markerPosition = 50;
+        marker.style.left = `${markerPosition}%`;
+        playerPowerLevel = 0;
+        aiPowerLevel = 0;
+        playerPower.style.width = "0%";
+        aiPower.style.width = "0%";
+        resultDisplay.textContent = "";
+        updateScoreDisplay();
+      }
+
+      // Mettre à jour l'affichage des scores
+      function updateScoreDisplay() {
+        playerScoreDisplay.textContent = playerScore;
+        aiScoreDisplay.textContent = aiScore;
+      }
+
+      // Vérifier la victoire (inversé par rapport à la version originale)
+      function checkWin() {
+        if (markerPosition >= 95) {
+          endGame("Joueur");
+          playerScore++;
+          updateScoreDisplay();
+          return true;
+        } else if (markerPosition <= 5) {
+          endGame("Ordinateur");
+          aiScore++;
+          updateScoreDisplay();
+          return true;
+        }
+        return false;
+      }
+
+      // Terminer la partie
+      function endGame(winner) {
+        isGameActive = false;
+        clearInterval(aiInterval);
+        resultDisplay.textContent = `${winner} a gagné!`;
+        startBtn.disabled = false;
+      }
+
+      // Logique principale du jeu
+      function gameLoop() {
+        // Décroissance naturelle de la puissance (plus rapide)
+        playerPowerLevel = Math.max(0, playerPowerLevel - POWER_DECAY);
+        aiPowerLevel = Math.max(0, aiPowerLevel - POWER_DECAY * 0.8); // L'ordinateur fatigue moins vite
+
+        // Mettre à jour les barres de puissance
+        playerPower.style.width = `${playerPowerLevel}%`;
+        aiPower.style.width = `${aiPowerLevel}%`;
+
+        // Calculer les forces de poussée (inversé)
+        playerPushRate = playerPowerLevel * PUSH_STRENGTH;
+        aiPushRate = aiPowerLevel * PUSH_STRENGTH;
+
+        // Déplacer le marqueur (inversé)
+        markerPosition += (playerPushRate - aiPushRate) / 10;
+        markerPosition = Math.max(0, Math.min(100, markerPosition));
+        marker.style.left = `${markerPosition}%`;
+
+        // Vérifier la victoire
+        if (checkWin()) {
+          return;
+        }
+
+        // Continuer la boucle de jeu
+        if (isGameActive) {
+          requestAnimationFrame(gameLoop);
+        }
+      }
+
+      // AI comportement (amélioré)
+      function startAI() {
+        aiInterval = setInterval(() => {
+          if (!isGameActive) return;
+
+          // L'IA pousse avec une fréquence variable
+          const pushStrength = Math.random() * POWER_GAIN * 2 * difficultyLevel;
+
+          // L'IA devient plus agressive si elle est en train de perdre
+          const aggression =
+            markerPosition > 50 ? difficultyLevel * 1.5 : difficultyLevel;
+
+          // Comportement plus intelligent
+          if (Math.random() < aggression) {
+            // L'IA pousse plus fort quand elle a l'avantage
+            aiPowerLevel = Math.min(MAX_POWER, aiPowerLevel + pushStrength);
+          }
+
+          // Parfois l'IA fait une poussée surprenante
+          if (Math.random() < 0.05 * difficultyLevel) {
+            aiPowerLevel = Math.min(MAX_POWER, aiPowerLevel + POWER_GAIN * 5);
+          }
+        }, Math.random() * (AI_MAX_INTERVAL - AI_MIN_INTERVAL) + AI_MIN_INTERVAL);
+      }
+
+      // Gestionnaires d'événements
+      startBtn.addEventListener("click", () => {
+        if (!isGameActive) {
+          isGameActive = true;
+          startBtn.disabled = true;
+          resultDisplay.textContent = "";
+          startAI();
+          gameLoop();
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        isGameActive = false;
+        clearInterval(aiInterval);
+        initGame();
+        startBtn.disabled = false;
+      });
+
+      // Gestion de l'appui sur la touche espace (système amélioré)
+      let consecutivePresses = 0;
+      let fatigueFactor = 1;
+
+      document.addEventListener("keydown", (event) => {
+        if (event.code === "Space" && isGameActive && !pushCooldown) {
+          event.preventDefault();
+
+          const now = Date.now();
+          const timeSinceLastPress = now - lastPressTime;
+          lastPressTime = now;
+
+          // Anti-spam: limitation de la fréquence des appuis
+          if (timeSinceLastPress < 50) {
+            return;
+          }
+
+          // Système de fatigue: appuyer trop vite devient moins efficace
+          consecutivePresses++;
+          if (consecutivePresses > 10) {
+            fatigueFactor *= FATIGUE_FACTOR;
+          }
+
+          // Réinitialiser la fatigue si on laisse reposer
+          if (timeSinceLastPress > 500) {
+            consecutivePresses = 0;
+            fatigueFactor = 1;
+          }
+
+          // Calcul de la puissance ajoutée (proportionnelle au temps entre les appuis)
+          let addPower = POWER_GAIN * fatigueFactor;
+
+          if (timeSinceLastPress < 200) {
+            // Bonus pour appuis rapides mais pas trop rapides
+            addPower += (200 - timeSinceLastPress) / 25;
+          }
+
+          playerPowerLevel = Math.min(MAX_POWER, playerPowerLevel + addPower);
+
+          // Petit délai pour éviter le spam trop rapide
+          pushCooldown = true;
+          setTimeout(() => {
+            pushCooldown = false;
+          }, 20);
+        }
+      });
+
+      // Éviter le défilement de la page quand on appuie sur espace
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+          e.preventDefault();
+        }
+      });
+
+      // Initialisation
+      setupDifficultyControl();
+      initGame();
+    </script>
+  </body>
+</html>
